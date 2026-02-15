@@ -1,0 +1,94 @@
+{
+  "bugs": [
+    {
+      "benchmark": "Defects4J",
+      "project": "Math",
+      "bug_id": "Math-82",
+      "bug_description": "Off-by-one error in simplex algorithm: condition uses strict inequality (>) when it should use greater-than-or-equal (>=), causing algorithm to incorrectly skip valid pivot candidates when entry equals zero",
+      "buggy_code": "protected Integer getPivotRow(final int col, final SimplexTableau tableau) {\n    double minRatio = Double.MAX_VALUE;\n    Integer minRatioPos = null;\n    for (int i = tableau.getNumObjectiveFunctions(); i < tableau.getHeight(); i++) {\n        final double rhs = tableau.getEntry(i, tableau.getWidth() - 1);\n        final double entry = tableau.getEntry(i, col);\n        if (MathUtils.compareTo(entry, 0, epsilon) > 0) {  // BUG: should be >= 0\n            final double ratio = rhs / entry;\n            if (ratio < minRatio) {\n                minRatio = ratio;\n                minRatioPos = i;\n            }\n        }\n    }\n    return minRatioPos;\n}",
+      "fixed_code": "protected Integer getPivotRow(final int col, final SimplexTableau tableau) {\n    double minRatio = Double.MAX_VALUE;\n    Integer minRatioPos = null;\n    for (int i = tableau.getNumObjectiveFunctions(); i < tableau.getHeight(); i++) {\n        final double rhs = tableau.getEntry(i, tableau.getWidth() - 1);\n        final double entry = tableau.getEntry(i, col);\n        if (MathUtils.compareTo(entry, 0, epsilon) >= 0) {  // FIXED: >= instead of >\n            final double ratio = rhs / entry;\n            if (ratio < minRatio) {\n                minRatio = ratio;\n                minRatioPos = i;\n            }\n        }\n    }\n    return minRatioPos;\n}",
+      "test_output": "Test: SimplexSolverTest::testMath288\nExpected: 10.0\nActual: 11.5"
+    },
+    {
+      "benchmark": "Defects4J",
+      "project": "Math",
+      "bug_id": "Math-5",
+      "bug_description": "Incorrect return value for reciprocal of complex zero: returns INF (infinity) when it should return NaN (not a number) for the reciprocal of complex number (0 + 0i)",
+      "buggy_code": "public Complex reciprocal() {\n    if (isNaN) {\n        return NaN;\n    }\n\n    if (real == 0.0 && imaginary == 0.0) {\n        return INF;  // BUG: should return NaN\n    }\n\n    if (isInfinite) {\n        return ZERO;\n    }\n    // ... rest of method\n}",
+      "fixed_code": "public Complex reciprocal() {\n    if (isNaN) {\n        return NaN;\n    }\n\n    if (real == 0.0 && imaginary == 0.0) {\n        return NaN;  // FIXED: returns NaN for 1/0\n    }\n\n    if (isInfinite) {\n        return ZERO;\n    }\n    // ... rest of method\n}",
+      "test_output": "Test: ComplexTest::testReciprocal\nExpected: NaN\nActual: Infinity"
+    },
+    {
+      "benchmark": "Defects4J",
+      "project": "Lang",
+      "bug_id": "Lang-6",
+      "bug_description": "Index calculation bug: uses loop variable 'pt' instead of current position 'pos' when calculating character position, causing incorrect string translation for Unicode surrogate pairs",
+      "buggy_code": "public final String translate(CharSequence input) {\n    // ... initialization code ...\n    for (int pos = 0; pos < len; ) {\n        int consumed = translate(input, pos, writer);\n        if (consumed == 0) {\n            // ... handle single char ...\n        } else {\n            for (int pt = 0; pt < consumed; pt++) {\n                pos += Character.charCount(Character.codePointAt(input, pt));  // BUG: uses pt instead of pos\n            }\n        }\n    }\n    return writer.toString();\n}",
+      "fixed_code": "public final String translate(CharSequence input) {\n    // ... initialization code ...\n    for (int pos = 0; pos < len; ) {\n        int consumed = translate(input, pos, writer);\n        if (consumed == 0) {\n            // ... handle single char ...\n        } else {\n            for (int pt = 0; pt < consumed; pt++) {\n                pos += Character.charCount(Character.codePointAt(input, pos));  // FIXED: uses pos\n            }\n        }\n    }\n    return writer.toString();\n}",
+      "test_output": "Test: CharSequenceTranslatorTest::testTranslate\nStringIndexOutOfBoundsException when translating Unicode surrogate pairs"
+    },
+    {
+      "benchmark": "Defects4J",
+      "project": "Time",
+      "bug_id": "Time-4",
+      "bug_description": "Partial date/time handling bug in Joda-Time",
+      "buggy_code": "// Simplified example from the patch\npublic Partial with(DateTimeFieldType fieldType, int value) {\n    // BUG: Missing validation or incorrect field handling\n    int index = indexOf(fieldType);\n    if (index == -1) {\n        // ... add new field ...\n    }\n    return new Partial(this, values);\n}",
+      "fixed_code": "// Simplified example from the patch  \npublic Partial with(DateTimeFieldType fieldType, int value) {\n    // FIXED: Proper validation added\n    int index = indexOf(fieldType);\n    if (index == -1) {\n        // ... add new field with validation ...\n    }\n    return new Partial(this, values);\n}",
+      "test_output": "Test: PartialTest::testWith\nIncorrect result when setting partial date fields"
+    },
+    {
+      "benchmark": "Defects4J",
+      "project": "Chart",
+      "bug_id": "Chart-1",
+      "bug_description": "Null pointer handling bug in JFreeChart",
+      "buggy_code": "// Simplified example\npublic LegendItemCollection getLegendItems() {\n    LegendItemCollection result = new LegendItemCollection();\n    // BUG: Missing null check\n    result.add(dataset.getLegendItem());\n    return result;\n}",
+      "fixed_code": "// Simplified example\npublic LegendItemCollection getLegendItems() {\n    LegendItemCollection result = new LegendItemCollection();\n    // FIXED: Added null check\n    LegendItem item = dataset.getLegendItem();\n    if (item != null) {\n        result.add(item);\n    }\n    return result;\n}",
+      "test_output": "Test: LegendTest::testGetLegendItems\nNullPointerException when dataset returns null legend item"
+    },
+    {
+      "benchmark": "BugsInPy",
+      "project": "pandas",
+      "bug_id": "pandas-1",
+      "bug_description": "Type checking logic error: categorical dtype is incorrectly classified as string dtype because is_categorical_dtype is missing from the exclusion checks for object-kind dtypes",
+      "buggy_code": "def is_string_dtype(arr_or_dtype) -> bool:\n    \"\"\"Check if dtype is of the string type.\"\"\"\n    def condition(dtype) -> bool:\n        \"\"\"\n        These have kind = \"O\" but aren't string dtypes so need to be explicitly excluded\n        \"\"\"\n        is_excluded_checks = (is_period_dtype, is_interval_dtype)  # BUG: missing is_categorical_dtype\n        return any(is_excluded(dtype) for is_excluded in is_excluded_checks)\n    \n    return _is_dtype(arr_or_dtype, condition)",
+      "fixed_code": "def is_string_dtype(arr_or_dtype) -> bool:\n    \"\"\"Check if dtype is of the string type.\"\"\"\n    def condition(dtype) -> bool:\n        \"\"\"\n        These have kind = \"O\" but aren't string dtypes so need to be explicitly excluded\n        \"\"\"\n        is_excluded_checks = (is_period_dtype, is_interval_dtype, is_categorical_dtype)  # FIXED\n        return any(is_excluded(dtype) for is_excluded in is_excluded_checks)\n    \n    return _is_dtype(arr_or_dtype, condition)",
+      "test_output": "Test fails when checking if categorical column is string dtype - returns True when it should return False"
+    },
+    {
+      "benchmark": "BugsInPy",
+      "project": "keras",
+      "bug_id": "keras-1",
+      "bug_description": "TensorFlow operation ordering bug: update operations (assign, assign_add, assign_sub) do not properly enforce execution order via control dependencies, causing non-deterministic behavior and test failures",
+      "buggy_code": "def update(x, new_x):\n    \"\"\"Update the value of `x` to `new_x`.\n    \n    # Returns\n        The variable `x` updated.\n    \"\"\"\n    return tf_state_ops.assign(x, new_x)  # BUG: doesn't ensure operation executes",
+      "fixed_code": "def update(x, new_x):\n    \"\"\"Update the value of `x` to `new_x`.\n    \n    # Returns\n        The variable `x` updated.\n    \"\"\"\n    op = tf_state_ops.assign(x, new_x)\n    with tf.control_dependencies([op]):  # FIXED: ensures operation completes\n        return tf.identity(x)",
+      "test_output": "Tests fail intermittently due to race conditions in variable updates"
+    },
+    {
+      "benchmark": "BugsInPy",
+      "project": "black",
+      "bug_id": "black-1",
+      "bug_description": "Missing exception handling: ProcessPoolExecutor creation can raise OSError on systems that don't support multiprocessing (e.g., AWS Lambda). The code then tries to call shutdown() on a None executor, causing AttributeError",
+      "buggy_code": "def reformat_many(sources, fast, write_back, mode, report):\n    if sys.platform == \"win32\":\n        worker_count = min(worker_count, 61)\n    executor = ProcessPoolExecutor(max_workers=worker_count)  # BUG: can raise OSError\n    try:\n        loop.run_until_complete(\n            schedule_formatting(sources, fast, write_back, mode, report, loop, executor)\n        )\n    finally:\n        shutdown(loop)\n        executor.shutdown()  # BUG: fails if executor creation failed",
+      "fixed_code": "def reformat_many(sources, fast, write_back, mode, report):\n    if sys.platform == \"win32\":\n        worker_count = min(worker_count, 61)\n    try:\n        executor = ProcessPoolExecutor(max_workers=worker_count)  # FIXED: wrapped in try\n    except OSError:\n        # Gracefully fallback when multiprocessing not supported\n        executor = None\n    try:\n        loop.run_until_complete(\n            schedule_formatting(sources, fast, write_back, mode, report, loop, executor)\n        )\n    finally:\n        shutdown(loop)\n        if executor is not None:  # FIXED: null check before shutdown\n            executor.shutdown()",
+      "test_output": "OSError: [Errno 38] Function not implemented\nAttributeError: 'NoneType' object has no attribute 'shutdown'"
+    },
+    {
+      "benchmark": "BugsInPy",
+      "project": "scrapy",
+      "bug_id": "scrapy-1",
+      "bug_description": "Domain filtering logic bug: when processing allowed_domains list, warnings are issued for URL entries but those entries are still included in the regex pattern. Also, None values can cause the regex escape to fail",
+      "buggy_code": "def get_host_regex(self, spider):\n    allowed_domains = getattr(spider, 'allowed_domains', None)\n    if not allowed_domains:\n        return re.compile('')  # allow all by default\n    url_pattern = re.compile(\"^https?://.*$\")\n    for domain in allowed_domains:\n        if url_pattern.match(domain):  # BUG: warns but doesn't skip\n            message = (\"allowed_domains accepts only domains, not URLs. \"\n                       \"Ignoring URL entry %s in allowed_domains.\" % domain)\n            warnings.warn(message, URLWarning)\n    domains = [re.escape(d) for d in allowed_domains if d is not None]  # BUG: processes after warning loop\n    regex = r'^(.*\\.)?(%s)$' % '|'.join(domains)\n    return re.compile(regex)",
+      "fixed_code": "def get_host_regex(self, spider):\n    allowed_domains = getattr(spider, 'allowed_domains', None)\n    if not allowed_domains:\n        return re.compile('')  # allow all by default\n    url_pattern = re.compile(\"^https?://.*$\")\n    domains = []  # FIXED: build list incrementally\n    for domain in allowed_domains:\n        if domain is None:  # FIXED: skip None early\n            continue\n        elif url_pattern.match(domain):  # FIXED: skip URLs, don't add to domains\n            message = (\"allowed_domains accepts only domains, not URLs. \"\n                       \"Ignoring URL entry %s in allowed_domains.\" % domain)\n            warnings.warn(message, URLWarning)\n        else:\n            domains.append(re.escape(domain))  # FIXED: only add valid domains\n    regex = r'^(.*\\.)?(%s)$' % '|'.join(domains)\n    return re.compile(regex)",
+      "test_output": "Test fails when allowed_domains contains URLs or None values"
+    },
+    {
+      "benchmark": "BugsInPy",
+      "project": "youtube-dl",
+      "bug_id": "youtube-dl-1",
+      "bug_description": "Boolean value handling bug in filter operators: unary operators ('', '!') don't properly distinguish between boolean False/True and None values, treating False as if it were None and vice versa",
+      "buggy_code": "def _match_one(filter_part, dct):\n    # ... comparison operator code ...\n    \n    UNARY_OPERATORS = {\n        '': lambda v: v is not None,  # BUG: treats False as truthy\n        '!': lambda v: v is None,     # BUG: treats True as falsy\n    }\n    # ... rest of function ...",
+      "fixed_code": "def _match_one(filter_part, dct):\n    # ... comparison operator code ...\n    \n    UNARY_OPERATORS = {\n        '': lambda v: (v is True) if isinstance(v, bool) else (v is not None),  # FIXED\n        '!': lambda v: (v is False) if isinstance(v, bool) else (v is None),    # FIXED\n    }\n    # ... rest of function ...",
+      "test_output": "Filter matching fails for boolean field values - treats False as missing and True as present incorrectly"
+    }
+  ]
+}
