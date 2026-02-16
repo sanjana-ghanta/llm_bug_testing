@@ -337,15 +337,15 @@
 
 **Easy Bugs (1-line changes):**
 - Math-82, Math-5, pandas-1: 30/30 average
-- Claude is **perfect** on simple bugs
+- Claude is great on simple bugs
 
 **Medium Bugs (multi-line, logic flow):**
 - Lang-6, black-1, scrapy-1: 28.7/30 average
-- **Excellent** performance
+- Does well
 
 **Hard Bugs (system-specific knowledge):**
 - keras-1, youtube-dl-1: 25/30 average
-- **Good but not perfect**
+- Seemingly okay, but not great
 
 ### Java vs Python
 
